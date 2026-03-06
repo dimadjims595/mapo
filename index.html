@@ -145,6 +145,115 @@
 
   <script>
     // Здесь вставьте JavaScript‑код, приведённый выше
+    // Данные карт по датам
+const maps = [
+  {
+    date: "1 марта 2024",
+    image: "map1.jpg" // Замените на имя вашего файла
+  },
+  {
+    date: "2 марта 2024",
+    image: "map2.jpg" // Замените на имя вашего файла
+  },
+  {
+    date: "3 марта 2024", // Самая последняя версия (по умолчанию)
+    image: "map3.jpg" // Замените на имя вашего файла
+  }
+];
+
+// Текущие настройки
+let currentIndex = maps.length - 1; // По умолчанию последняя карта
+let scale = 1;
+let isDragging = false;
+let startX, startY, translateX = 0, translateY = 0;
+
+// Элементы DOM
+const mapContainer = document.getElementById('mapContainer');
+const mapElement = document.createElement('img');
+mapElement.className = 'map';
+mapContainer.appendChild(mapElement);
+
+const currentDateElement = document.getElementById('currentDate');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const zoomInBtn = document.getElementById('zoomIn');
+const zoomOutBtn = document.getElementById('zoomOut');
+
+// Инициализация
+function initMap() {
+  loadMap(currentIndex);
+}
+
+// Загрузка карты
+function loadMap(index) {
+  const map = maps[index];
+  mapElement.src = map.image;
+  currentDateElement.textContent = map.date;
+  resetView();
+}
+
+// Сброс вида карты
+function resetView() {
+  scale = 1;
+  translateX = 0;
+  translateY = 0;
+  updateMapTransform();
+}
+
+// Обновление трансформации карты
+function updateMapTransform() {
+  mapElement.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+}
+
+// Обработчики событий для перемещения
+mapElement.addEventListener('mousedown', (e) => {
+  isDragging = true;
+  startX = e.clientX - translateX;
+  startY = e.clientY - translateY;
+  mapElement.style.cursor = 'grabbing';
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  translateX = e.clientX - startX;
+  translateY = e.clientY - startY;
+  updateMapTransform();
+});
+
+document.addEventListener('mouseup', () => {
+  isDragging = false;
+  mapElement.style.cursor = 'grab';
+});
+
+// Масштабирование
+zoomInBtn.addEventListener('click', () => {
+  scale += 0.2;
+  updateMapTransform();
+});
+
+zoomOutBtn.addEventListener('click', () => {
+  scale = Math.max(0.5, scale - 0.2); // Минимум 0.5
+  updateMapTransform();
+});
+
+// Переключение дат
+prevBtn.addEventListener('click', () => {
+  if (currentIndex > 0) {
+    currentIndex--;
+    loadMap(currentIndex);
+  }
+});
+
+nextBtn.addEventListener('click', () => {
+  if (currentIndex < maps.length - 1) {
+    currentIndex++;
+    loadMap(currentIndex);
+  }
+});
+
+// Запуск при загрузке страницы
+window.addEventListener('load', initMap);
+
   </script>
 </body>
 </html>
