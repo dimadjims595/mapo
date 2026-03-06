@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Интерактивная карта</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .date-selector {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .nav-btn:hover {
+            background: #34495e;
+        }
+
+        .current-date {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .map-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .map {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: grab;
+            transition: transform 0.3s ease;
+        }
+
+        .map:active {
+            cursor: grabbing;
+        }
+
+        .zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .zoom-btn:hover {
+            background: rgba(255,255,255,1);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Интерактивная карта</h1>
+            <p>Перемещайте карту внутри окна, масштабируйте и переключайте версии по датам</p>
+        </header>
+
+        <div class="date-selector">
+            <button class="nav-btn" id="prevBtn">← Предыдущая</button>
+            <div class="current-date" id="currentDate">3 марта 2024</div>
+            <button class="nav-btn" id="nextBtn">Следующая →</button>
+        </div>
+
+        <div class="map-container" id="mapContainer">
+            <!-- Карта будет загружаться здесь -->
+        </div>
+
+        <div class="zoom-controls">
+            <button class="zoom-btn" id="zoomIn">+</button>
+            <button class="zoom-btn" id="zoomOut">-</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2024 Интерактивная карта. Все права защищены.</p>
+    </footer>
+
+    <script>
+        // Данные карт по датам
+        const maps = [
+            {
+                date: "1 марта 2024",
+                image: "path/to/your/map1.jpg" // Замените на путь к вашему изображению
+            },
+            {
+                date: "2 марта 2024",
+                image: "path/to/your/map2.jpg" // Замените на путь к вашему изображению
+            },
+            {
+                date: "3 марта 2024", // Самая последняя версия (по умолчанию)
+                image: "path/to/your/map3.jpg" // Замените на путь к вашему изображению
+            }
+        ];
+
+        // Текущие настройки
+        let currentIndex = maps.length - 1; // По умолчанию последняя карта
+        let scale = 1;
+        let isDragging = false;
+        let startX, startY, translateX = 0, translateY = 0;
+
+        // Элементы DOM
+        const mapContainer = document.getElementById('mapContainer');
+        const mapElement = document.createElement('img');
+        mapElement.className = 'map';
+        mapContainer.appendChild(mapElement);
+
+        const currentDateElement = document.getElementById('currentDate');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const zoomInBtn = document.getElementById('zoomIn');
+        const zoomOutBtn = document.getElementById('zoomOut');
+
+        // Инициализация
+        function initMap() {
+            loadMap(currentIndex);
+        }
+
+        // Загрузка карты
+        function loadMap(index) {
+            const map = maps[index];
+            mapElement.src = map.image;
+            currentDateElement.textContent = map.date;
+            resetView();
+        }
+
+        // Сброс вида карты
+        function resetView() {
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateMapTransform();
+        }
+
+        // Обновление трансформации карты
+        function updateMapTransform() {
+            mapElement.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        }
+
+        // Обработчики событий для перемещения
+        mapElement.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            mapElement.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateMapTransform();
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            mapElement.style.cursor = 'grab';
+        });
+
+        // Масштабирование
+        zoomInBtn.addEventListener('click', () => {
+            scale += 0.2;
+            updateMapTransform();
+        });
+
+        zoomOutBtn.addEventListener('click', () => {
+            scale = Math.max(0.5, scale - 0.2); // Минимум 0.5
+            updateMapTransform();
+        });
+
+        // Переключение дат
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                loadMap(currentIndex);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < maps.length - 1) {
+                currentIndex++;
+                loadMap(current
